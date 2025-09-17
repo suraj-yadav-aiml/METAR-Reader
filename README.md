@@ -60,7 +60,7 @@ Before running this application, ensure you have:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/metar-reader.git
+   git clone https://github.com/suraj-yadav-aiml/METAR-Reader.git
    cd metar-reader
    ```
 
@@ -89,7 +89,7 @@ Before running this application, ensure you have:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/metar-reader.git
+   git clone https://github.com/suraj-yadav-aiml/METAR-Reader.git
    cd metar-reader
    ```
 
@@ -234,7 +234,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/your-username/metar-reader/issues) page
+1. Check the [Issues](https://github.com/suraj-yadav-aiml/METAR-Reader.git/issues) page
 2. Create a new issue with detailed description
 3. Include your Python version and operating system
 4. Provide steps to reproduce the problem
