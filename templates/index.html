@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>METAR Reader - Airport Weather Reports</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✈️ METAR Reader</h1>
+            <p>Get friendly, readable weather reports from any airport worldwide</p>
+        </div>
+
+        <div class="content">
+            <div class="search-section">
+                <form class="search-form" id="metarForm">
+                    <div class="input-group">
+                        <input
+                            type="text"
+                            id="airport_code"
+                            name="airport_code"
+                            placeholder="Enter airport code (e.g., KTIG)"
+                            maxlength="4"
+                            required
+                        >
+                    </div>
+                    <button type="submit" class="search-btn" id="searchBtn">
+                        Get Weather Report
+                    </button>
+                </form>
+
+                <div class="example-codes">
+                    <strong>Examples:</strong> KTIG (Martinsburg, WV), KJFK (JFK New York), KLAX (LAX Los Angeles), EGLL (Heathrow London)
+                </div>
+            </div>
+
+            <div class="results-section" id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('metarForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const airportCode = document.getElementById('airport_code').value.trim().toUpperCase();
+            const resultsDiv = document.getElementById('results');
+            const searchBtn = document.getElementById('searchBtn');
+
+            if (!airportCode) {
+                resultsDiv.innerHTML = '<div class="error">Please enter an airport code</div>';
+                return;
+            }
+
+            if (airportCode.length !== 4) {
+                resultsDiv.innerHTML = '<div class="error">Airport code must be 4 characters (e.g., KTIG)</div>';
+                return;
+            }
+
+            searchBtn.disabled = true;
+            resultsDiv.innerHTML = '<div class="loading"><span class="spinner"></span>Fetching weather data...</div>';
+
+            try {
+                const formData = new FormData();
+                formData.append('airport_code', airportCode);
+
+                const response = await fetch('/get_metar', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">${data.error}</div>`;
+                } else {
+                    const timestamp = new Date().toLocaleString();
+                    const decoded = data.decoded_data;
+
+                    let weatherHTML = `
+                        <div class="result-card">
+                            <div class="airport-header">
+                                <div class="airport-code">${data.airport_code}</div>
+                                <div class="timestamp">Retrieved: ${timestamp}</div>
+                            </div>
+
+                            <div class="weather-grid">
+                    `;
+
+                    // Temperature Section
+                    if (decoded.temperature) {
+                        weatherHTML += `
+                            <div class="weather-item temperature-item">
+                                <div class="weather-icon">🌡️</div>
+                                <div class="weather-content">
+                                    <h4>Temperature</h4>
+                                    <div class="main-value">${decoded.temperature.fahrenheit}°F</div>
+                                    <div class="sub-value">${decoded.temperature.celsius}°C</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Wind Section
+                    if (decoded.wind) {
+                        const windIcon = decoded.wind.speed === 0 ? '🍃' : '💨';
+                        let windText = decoded.wind.speed === 0 ? 'Calm' :
+                            `${decoded.wind.description} at ${decoded.wind.speed} mph`;
+                        if (decoded.wind.gust) {
+                            windText += ` (gusts to ${decoded.wind.gust} mph)`;
+                        }
+
+                        weatherHTML += `
+                            <div class="weather-item wind-item">
+                                <div class="weather-icon">${windIcon}</div>
+                                <div class="weather-content">
+                                    <h4>Wind</h4>
+                                    <div class="main-value">${windText}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Visibility Section
+                    if (decoded.visibility) {
+                        weatherHTML += `
+                            <div class="weather-item visibility-item">
+                                <div class="weather-icon">👁️</div>
+                                <div class="weather-content">
+                                    <h4>Visibility</h4>
+                                    <div class="main-value">${decoded.visibility.description}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Pressure Section
+                    if (decoded.pressure) {
+                        weatherHTML += `
+                            <div class="weather-item pressure-item">
+                                <div class="weather-icon">📊</div>
+                                <div class="weather-content">
+                                    <h4>Pressure</h4>
+                                    <div class="main-value">${decoded.pressure.description}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Sky Conditions Section
+                    if (decoded.sky_conditions && decoded.sky_conditions.length > 0) {
+                        const skyIcon = decoded.sky_conditions[0].condition === 'CLR' || decoded.sky_conditions[0].condition === 'SKC' ? '☀️' :
+                                       decoded.sky_conditions[0].condition === 'OVC' ? '☁️' : '⛅';
+
+                        weatherHTML += `
+                            <div class="weather-item sky-item">
+                                <div class="weather-icon">${skyIcon}</div>
+                                <div class="weather-content">
+                                    <h4>Sky Conditions</h4>
+                        `;
+
+                        decoded.sky_conditions.forEach(sky => {
+                            let skyText = sky.description;
+                            if (sky.height) {
+                                skyText += ` at ${sky.height.toLocaleString()} ft`;
+                            }
+                            weatherHTML += `<div class="main-value">${skyText}</div>`;
+                        });
+
+                        weatherHTML += `
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Weather Phenomena Section
+                    if (decoded.weather_phenomena && decoded.weather_phenomena.length > 0) {
+                        weatherHTML += `
+                            <div class="weather-item phenomena-item">
+                                <div class="weather-icon">🌧️</div>
+                                <div class="weather-content">
+                                    <h4>Weather</h4>
+                        `;
+
+                        decoded.weather_phenomena.forEach(weather => {
+                            weatherHTML += `<div class="main-value">${weather.description}</div>`;
+                        });
+
+                        weatherHTML += `
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Dewpoint Section
+                    if (decoded.dewpoint) {
+                        weatherHTML += `
+                            <div class="weather-item dewpoint-item">
+                                <div class="weather-icon">💧</div>
+                                <div class="weather-content">
+                                    <h4>Dewpoint</h4>
+                                    <div class="main-value">${decoded.dewpoint.fahrenheit}°F</div>
+                                    <div class="sub-value">${decoded.dewpoint.celsius}°C</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Time Section
+                    if (decoded.time) {
+                        weatherHTML += `
+                            <div class="weather-item time-item">
+                                <div class="weather-icon">🕐</div>
+                                <div class="weather-content">
+                                    <h4>Observation Time</h4>
+                                    <div class="main-value">${decoded.time}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    weatherHTML += `
+                            </div>
+
+                            <details class="raw-metar">
+                                <summary>🔍 View Raw METAR Data</summary>
+                                <div class="raw-text">${data.raw_metar}</div>
+                            </details>
+                        </div>
+                    `;
+
+                    resultsDiv.innerHTML = weatherHTML;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="error">Network error. Please check your connection and try again.</div>';
+            } finally {
+                searchBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('airport_code').addEventListener('input', function(e) {
+            e.target.value = e.target.value.toUpperCase();
+        });
+    </script>
+</body>
+</html>

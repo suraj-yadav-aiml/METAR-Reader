@@ -1,0 +1,10 @@
+[project]
+name = "meter-reader"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask==2.3.3",
+    "requests==2.31.0",
+]
