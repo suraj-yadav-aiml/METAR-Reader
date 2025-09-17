@@ -61,7 +61,7 @@ Before running this application, ensure you have:
 1. **Clone the repository**
    ```bash
    git clone https://github.com/suraj-yadav-aiml/METAR-Reader.git
-   cd metar-reader
+   cd METAR-Reader
    ```
 
 2. **Install uv** (if not already installed)
@@ -90,7 +90,7 @@ Before running this application, ensure you have:
 1. **Clone the repository**
    ```bash
    git clone https://github.com/suraj-yadav-aiml/METAR-Reader.git
-   cd metar-reader
+   cd METAR-Reader
    ```
 
 2. **Create virtual environment**
